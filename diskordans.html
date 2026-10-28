@@ -3,100 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>3D Diskordans Modelleri</title>
-
-<script type="module"
-src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js">
-</script>
-
+<title>3D Diskordans Arazi Modelleri</title>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f1f5f9;
-  text-align: center;
-}
-
-h2 {
-  margin: 20px 10px;
-}
-
-.buttons {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 15px;
-}
-
-button {
-  padding: 14px 20px;
-  border: none;
-  border-radius: 10px;
-  background: #2563eb;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-model-viewer {
-  width: 100%;
-  height: 70dvh;
-  background: #e2e8f0;
-}
-
-#status {
-  padding: 10px;
-}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172033;text-align:center}h2{margin:20px 10px}.buttons{display:flex;justify-content:center;gap:10px;padding:12px}button{padding:13px 19px;border:0;border-radius:10px;background:#2563eb;color:white;font-size:16px;cursor:pointer}button:focus-visible{outline:3px solid #f59e0b}.stage{position:relative;width:100%;height:70dvh;min-height:320px;background:#e2e8f0}model-viewer{width:100%;height:100%;--poster-color:transparent}.loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(241,245,249,.95);z-index:2;padding:20px}.loading[hidden]{display:none}.panel{width:min(340px,100%);background:white;border-radius:18px;padding:28px 22px;box-shadow:0 12px 32px #0f172a20}.spinner{width:48px;height:48px;margin:0 auto 18px;border:5px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.bar{height:12px;border-radius:20px;background:#e2e8f0;overflow:hidden;margin:16px 0 8px}.fill{height:100%;width:0;background:#2563eb;transition:width .2s}#percent{font-weight:bold;font-size:20px}#status{font-size:14px;color:#475569;line-height:1.5}#hint{padding:10px;color:#475569;font-size:14px}
 </style>
 </head>
-
 <body>
-
 <h2>3D Diskordans Arazi Modelleri</h2>
-
-<div class="buttons">
-  <button onclick="loadModel(1)">Model 1</button>
-  <button onclick="loadModel(2)">Model 2</button>
-</div>
-
-<p id="status">Görüntülemek istediğiniz modeli seçin.</p>
-
-<model-viewer
-  id="viewer"
-  camera-controls
-  auto-rotate
-  autoplay
-  shadow-intensity="1"
-  interaction-prompt="none">
-</model-viewer>
-
+<div class="buttons"><button type="button" onclick="loadModel(1)">Model 1</button><button type="button" onclick="loadModel(2)">Model 2</button></div>
+<div class="stage">
+<model-viewer id="viewer" camera-controls auto-rotate autoplay shadow-intensity="1" interaction-prompt="none"></model-viewer>
+<div class="loading" id="loading" hidden role="status" aria-live="polite">
+<div class="panel"><div class="spinner" id="spinner"></div><strong id="heading">Model yükleniyor...</strong><div class="bar"><div class="fill" id="fill"></div></div><div id="percent">0%</div><p id="status">Model indiriliyor, lütfen bekleyin.</p></div>
+</div></div>
+<p id="hint">Görüntülemek istediğiniz modeli seçin.</p>
 <script>
-const viewer = document.getElementById("viewer");
-const status = document.getElementById("status");
-
-const models = {
-  1: "DiskordansArazi1.glb",
-  2: "diskordanarazi2.glb"
-};
-
-function loadModel(number) {
-  status.textContent = "Model yükleniyor, lütfen bekleyin...";
-  viewer.removeAttribute("src");
-
-  requestAnimationFrame(() => {
-    viewer.src = models[number];
-  });
+const viewer=document.getElementById('viewer');
+const loading=document.getElementById('loading');
+const fill=document.getElementById('fill');
+const percent=document.getElementById('percent');
+const status=document.getElementById('status');
+const heading=document.getElementById('heading');
+const spinner=document.getElementById('spinner');
+const hint=document.getElementById('hint');
+const models={1:'DiskordansArazi1.glb',2:'diskordanarazi2.glb'};
+let requestId=0;
+function showProgress(p){const value=Math.max(0,Math.min(100,Math.round(p*100)));fill.style.width=value+'%';percent.textContent=value+'%';}
+function loadModel(number){
+  const id=++requestId;
+  viewer.removeAttribute('src');
+  loading.hidden=false;spinner.hidden=false;heading.textContent='Model yükleniyor...';
+  showProgress(0);status.textContent='Model indiriliyor, lütfen bekleyin.';
+  hint.textContent='Model '+number+' seçildi.';
+  requestAnimationFrame(()=>{if(id===requestId)viewer.src=models[number];});
 }
-
-viewer.addEventListener("load", () => {
-  status.textContent = "Model hazır!";
+viewer.addEventListener('progress',e=>{
+  if(loading.hidden)return;
+  const p=e.detail.totalProgress;
+  if(Number.isFinite(p))showProgress(p);
+  if(p>=1)status.textContent='Dosya aktarıldı; 3D model hazırlanıyor...';
 });
-
-viewer.addEventListener("error", () => {
-  status.textContent = "Model yüklenemedi.";
-});
+viewer.addEventListener('load',()=>{showProgress(1);loading.hidden=true;hint.textContent='Model hazır! Parmağınızla döndürebilir ve yakınlaştırabilirsiniz.';});
+viewer.addEventListener('error',()=>{loading.hidden=false;spinner.hidden=true;heading.textContent='Model yüklenemedi';status.textContent='Dosya adını, internet bağlantınızı veya telefon belleğini kontrol edin.';});
 </script>
-
 </body>
 </html>
